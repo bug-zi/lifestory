@@ -30,7 +30,7 @@ export default function TokensPage() {
 
   useEffect(() => {
     const supabase = createClient();
-    supabase.auth.getUser().then(({ data }) => {
+    supabase.auth.getUser().then(({ data }: { data: { user: any } }) => {
       setUser(data.user);
       if (data.user) {
         fetch('/api/tokens')
