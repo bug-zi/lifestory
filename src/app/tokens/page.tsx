@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Coins, Crown, Gift } from 'lucide-react';
 import Link from 'next/link';
-import { createClient } from '@/lib/supabase';
+import { useAuthContext } from '@/components/auth-provider';
 import { toast } from 'sonner';
 import type { UserToken } from '@/types';
 
@@ -24,25 +24,22 @@ const diyPacks = [
 ];
 
 export default function TokensPage() {
+  const { user, loading: authLoading } = useAuthContext();
   const [tokens, setTokens] = useState<UserToken[]>([]);
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
-    const supabase = createClient();
-    supabase.auth.getUser().then(({ data }: { data: { user: any } }) => {
-      setUser(data.user);
-      if (data.user) {
-        fetch('/api/tokens')
-          .then((res) => res.json())
-          .then((data) => setTokens(data.tokens || []))
-          .catch(() => {})
-          .finally(() => setLoading(false));
-      } else {
-        setLoading(false);
-      }
-    });
-  }, []);
+    if (authLoading) return;
+    if (user) {
+      fetch('/api/tokens')
+        .then((res) => res.json())
+        .then((data) => setTokens(data.tokens || []))
+        .catch(() => {})
+        .finally(() => setLoading(false));
+    } else {
+      setLoading(false);
+    }
+  }, [authLoading, user]);
 
   const scriptBalance = tokens.find((t) => t.token_type === 'script')?.balance ?? 0;
   const diyBalance = tokens.find((t) => t.token_type === 'diy')?.balance ?? 0;

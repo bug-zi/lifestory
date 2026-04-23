@@ -4,12 +4,13 @@ import { useState, useEffect } from 'react';
 import { ScriptReader } from '@/components/ScriptReader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { BookOpen, RefreshCw } from 'lucide-react';
-import { createClient } from '@/lib/supabase';
+import { BookOpen, RefreshCw, Lock, Inbox } from 'lucide-react';
+import { useAuthContext } from '@/components/auth-provider';
 import { toast } from 'sonner';
 import type { Script } from '@/types';
 
 export default function DailyScriptPage() {
+  const { user: authUser } = useAuthContext();
   const [script, setScript] = useState<Script | null>(null);
   const [loading, setLoading] = useState(true);
   const [needsToken, setNeedsToken] = useState(false);
@@ -40,9 +41,7 @@ export default function DailyScriptPage() {
 
   async function handleSave() {
     if (!script) return;
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
+    if (!authUser) {
       toast.error('请先登录');
       return;
     }
@@ -64,7 +63,7 @@ export default function DailyScriptPage() {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
-          <div className="animate-pulse text-4xl mb-4">📖</div>
+          <BookOpen className="h-10 w-10 animate-pulse text-muted-foreground" />
           <p className="text-muted-foreground">正在为你抽取今天的人生副本...</p>
         </div>
       </div>
@@ -76,7 +75,7 @@ export default function DailyScriptPage() {
       <div className="flex items-center justify-center min-h-[60vh] px-4">
         <Card className="max-w-md w-full">
           <CardContent className="text-center py-12">
-            <div className="text-4xl mb-4">🔒</div>
+            <Lock className="h-10 w-10 text-muted-foreground" />
             <h2 className="text-xl font-semibold mb-2">副本印记不足</h2>
             <p className="text-muted-foreground mb-6">
               阅读副本需要消耗1枚副本印记。你可以通过签到、分享或购买获取印记。
@@ -100,7 +99,7 @@ export default function DailyScriptPage() {
       <div className="flex items-center justify-center min-h-[60vh] px-4">
         <Card className="max-w-md w-full">
           <CardContent className="text-center py-12">
-            <div className="text-4xl mb-4">📭</div>
+            <Inbox className="h-10 w-10 text-muted-foreground" />
             <h2 className="text-xl font-semibold mb-2">暂无副本</h2>
             <p className="text-muted-foreground mb-6">
               今天还没有可用的副本，请稍后再来。

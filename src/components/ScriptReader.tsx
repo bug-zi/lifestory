@@ -13,6 +13,7 @@ import {
   ArrowLeft,
 } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import type { Script } from '@/types';
 
 interface ScriptReaderProps {
@@ -23,6 +24,7 @@ interface ScriptReaderProps {
 }
 
 export function ScriptReader({ script, onSave, onEdit, isSaved }: ScriptReaderProps) {
+  const router = useRouter();
   const [showFull, setShowFull] = useState(false);
   const [readingProgress, setReadingProgress] = useState(0);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -41,25 +43,27 @@ export function ScriptReader({ script, onSave, onEdit, isSaved }: ScriptReaderPr
   // Split content into sections by emoji headers (e.g. "🥀 童年：xxx")
   const sections = splitIntoSections(script.content);
 
+  // Chinese numerals for chapter numbering
+  const cnNums = ['〇','一','二','三','四','五','六','七','八','九','十',
+    '十一','十二','十三','十四','十五','十六','十七','十八','十九','二十'];
+
   return (
-    <div className="mx-auto max-w-3xl px-4 py-6">
+    <div className="mx-auto max-w-2xl px-4 py-6">
       {/* Reading progress bar */}
       <div className="fixed top-14 left-0 right-0 z-40 h-0.5 bg-muted">
         <div
-          className="h-full bg-primary transition-all duration-150"
+          className="h-full bg-accent transition-all duration-150"
           style={{ width: `${readingProgress}%` }}
         />
       </div>
 
       {/* Header */}
       <div className="mb-8">
-        <Link href="/scripts/daily">
-          <Button variant="ghost" size="sm" className="gap-1 mb-4 -ml-2">
-            <ArrowLeft className="h-4 w-4" />
-            返回
-          </Button>
-        </Link>
-        <h1 className="text-3xl md:text-4xl font-bold">{script.title}</h1>
+        <Button variant="ghost" size="sm" className="gap-1 mb-4 -ml-2" onClick={() => router.back()}>
+          <ArrowLeft className="h-4 w-4" />
+          返回
+        </Button>
+        <h1 className="text-3xl md:text-4xl font-bold font-heading">{script.title}</h1>
         {script.subtitle && (
           <p className="mt-2 text-lg text-muted-foreground">{script.subtitle}</p>
         )}
@@ -86,20 +90,25 @@ export function ScriptReader({ script, onSave, onEdit, isSaved }: ScriptReaderPr
       <div ref={contentRef} className="prose prose-neutral max-w-none">
         {sections.map((section, i) => {
           if (showFull || i < 3) {
+            const isLastVisible = (showFull && i === sections.length - 1) || (!showFull && i === 2 && sections.length > 3);
             return (
-              <div key={i} className="mb-8">
+              <div key={i} className="mb-10">
                 {section.title && (
-                  <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                    {section.title}
-                  </h2>
+                  <div className="flex items-center gap-3 mb-5">
+                    <span className="section-number">卷{cnNums[i + 1] || i + 1}</span>
+                    <h2 className="text-xl font-semibold font-heading">
+                      {section.title}
+                    </h2>
+                  </div>
                 )}
-                <div className="text-base leading-relaxed whitespace-pre-wrap">
+                <div className="text-base leading-[1.8] tracking-wide whitespace-pre-wrap">
                   {section.paragraphs.map((p, j) => (
-                    <p key={j} className="mb-4 indent-8">
+                    <p key={j} className={`mb-6 indent-8 ${j === 0 && i === 0 ? 'drop-cap' : ''}`}>
                       {p}
                     </p>
                   ))}
                 </div>
+                {!isLastVisible && <div className="ink-divider" />}
               </div>
             );
           }
@@ -134,6 +143,11 @@ export function ScriptReader({ script, onSave, onEdit, isSaved }: ScriptReaderPr
               收起
             </Button>
           </div>
+        )}
+
+        {/* Ending ornament */}
+        {showFull && (
+          <div className="chapter-ornament mt-4 mb-2">· · ·</div>
         )}
       </div>
 

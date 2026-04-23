@@ -4,31 +4,28 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { CheckCircle2, Calendar, Gift } from 'lucide-react';
-import { createClient } from '@/lib/supabase';
+import { useAuthContext } from '@/components/auth-provider';
 import { toast } from 'sonner';
 import Link from 'next/link';
 
 export default function CheckInPage() {
+  const { user, loading: authLoading } = useAuthContext();
   const [checkedIn, setCheckedIn] = useState(false);
   const [loading, setLoading] = useState(true);
   const [checking, setChecking] = useState(false);
-  const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
-    const supabase = createClient();
-    supabase.auth.getUser().then(({ data }: { data: { user: any } }) => {
-      setUser(data.user);
-      if (data.user) {
-        fetch('/api/checkin')
-          .then((res) => res.json())
-          .then((data) => setCheckedIn(data.checkedIn))
-          .catch(() => {})
-          .finally(() => setLoading(false));
-      } else {
-        setLoading(false);
-      }
-    });
-  }, []);
+    if (authLoading) return;
+    if (user) {
+      fetch('/api/checkin')
+        .then((res) => res.json())
+        .then((data) => setCheckedIn(data.checkedIn))
+        .catch(() => {})
+        .finally(() => setLoading(false));
+    } else {
+      setLoading(false);
+    }
+  }, [authLoading, user]);
 
   async function handleCheckIn() {
     setChecking(true);

@@ -284,7 +284,18 @@ ${introduction || '（暂无介绍）'}
     const maxTokens = isComplex ? 3000 : 2000;
 
     const text = await callAI(aiConfig, prompt, { maxTokens, temperature: 0.8 });
-    const questions = JSON.parse(text);
+    // Strip markdown code fences if AI wraps output
+    const stripped = text.replace(/```(?:json)?\s*/g, '').replace(/```/g, '');
+    const jsonMatch = stripped.match(/\[[\s\S]*\]/);
+    if (!jsonMatch) {
+      return NextResponse.json({ error: 'AI返回格式错误' }, { status: 500 });
+    }
+    // Clean control characters that break JSON.parse
+    const cleaned = jsonMatch[0].replace(/[\x00-\x1f\x7f]/g, (ch) => {
+      if (ch === '\n' || ch === '\r' || ch === '\t') return ' ';
+      return '';
+    });
+    const questions = JSON.parse(cleaned);
     return NextResponse.json({ questions });
   } catch (err) {
     const message = err instanceof Error ? err.message : '生成问题失败';

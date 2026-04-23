@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Loader2, User, Bot, Save, Eye, EyeOff, Zap, Crown, Camera } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
-import { createClient } from '@/lib/supabase';
+import { useAuthContext } from '@/components/auth-provider';
 import { useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Profile, AIConfig, AIProvider } from '@/types';
@@ -18,6 +18,7 @@ import { AI_PROVIDER_OPTIONS } from '@/types';
 
 export default function ProfilePage() {
   const router = useRouter();
+  const { user: authUser, loading: authLoading } = useAuthContext();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -40,13 +41,11 @@ export default function ProfilePage() {
   const [testResult, setTestResult] = useState<{ ok: boolean; reply?: string; latency?: number; error?: string; provider?: string; model?: string } | null>(null);
 
   useEffect(() => {
-    loadProfile();
-  }, []);
+    if (!authLoading) loadProfile();
+  }, [authLoading]);
 
   async function loadProfile() {
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
+    if (!authUser) {
       router.push('/login');
       return;
     }

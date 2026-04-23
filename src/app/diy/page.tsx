@@ -4,9 +4,9 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Sparkles, Send, Loader2, LogIn, Clock } from 'lucide-react';
+import { Sparkles, Send, Loader2, LogIn, Clock, Lock } from 'lucide-react';
 import { toast } from 'sonner';
-import { createClient } from '@/lib/supabase';
+import { useAuthContext } from '@/components/auth-provider';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -19,6 +19,7 @@ interface Question {
 
 export default function DiyPage() {
   const router = useRouter();
+  const { user: authUser, loading: authLoading } = useAuthContext();
   const [step, setStep] = useState<'input' | 'introduce' | 'questions' | 'generating' | 'done'>('input');
   const [inputLife, setInputLife] = useState('');
   const [introduction, setIntroduction] = useState('');
@@ -27,17 +28,6 @@ export default function DiyPage() {
   const [generatedScriptId, setGeneratedScriptId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [freeUses, setFreeUses] = useState(3);
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    checkLoginStatus();
-  }, []);
-
-  async function checkLoginStatus() {
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    setIsLoggedIn(!!user);
-  }
 
   async function handleSubmitLife() {
     if (!inputLife.trim()) return;
@@ -175,7 +165,7 @@ export default function DiyPage() {
     }
   }
 
-  if (isLoggedIn === null) {
+  if (authLoading) {
     return (
       <div className="flex items-center justify-center min-h-[70vh] px-4">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -183,7 +173,7 @@ export default function DiyPage() {
     );
   }
 
-  if (isLoggedIn === false) {
+  if (!authUser) {
     return (
       <div className="flex items-center justify-center min-h-[70vh] px-4">
         <Card className="max-w-md w-full">
@@ -231,7 +221,7 @@ export default function DiyPage() {
       <div className="flex items-center justify-center min-h-[70vh] px-4">
         <Card className="max-w-md w-full">
           <CardContent className="text-center py-12">
-            <div className="text-4xl mb-4">✨</div>
+            <Sparkles className="h-10 w-10 text-accent mx-auto mb-4" />
             <h2 className="text-xl font-semibold mb-2">人生副本已生成！</h2>
             <p className="text-muted-foreground mb-6">
               「{inputLife}」的人生副本已经准备好了
@@ -379,7 +369,7 @@ export default function DiyPage() {
   return (
     <div className="mx-auto max-w-2xl px-4 py-12">
       <div className="text-center mb-12">
-        <div className="text-5xl mb-4">✨</div>
+        <Sparkles className="h-12 w-12 text-accent mx-auto mb-4" />
         <h1 className="text-3xl font-bold">DIY 你的人生</h1>
         <p className="text-muted-foreground mt-3 max-w-md mx-auto">
           输入你想体验的人生，AI会为你生成一段独一无二的人生副本。
@@ -394,7 +384,7 @@ export default function DiyPage() {
               placeholder="输入你想体验的人生，例如：富豪、画家、宇航员..."
               value={inputLife}
               onChange={(e) => setInputLife(e.target.value)}
-              className="text-lg"
+              className="text-lg bg-muted/50 border-muted focus:bg-background"
               onKeyDown={(e) => e.key === 'Enter' && handleSubmitLife()}
             />
             <Button

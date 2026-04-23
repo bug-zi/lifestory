@@ -3,12 +3,13 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { ScriptReader } from '@/components/ScriptReader';
-import { createClient } from '@/lib/supabase';
+import { useAuthContext } from '@/components/auth-provider';
 import { toast } from 'sonner';
 import type { Script } from '@/types';
 
 export default function ScriptDetailPage() {
   const { id } = useParams();
+  const { user: authUser } = useAuthContext();
   const [script, setScript] = useState<Script | null>(null);
   const [loading, setLoading] = useState(true);
   const [isSaved, setIsSaved] = useState(false);
@@ -24,9 +25,7 @@ export default function ScriptDetailPage() {
 
   async function handleSave() {
     if (!script) return;
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
+    if (!authUser) {
       toast.error('请先登录');
       return;
     }
