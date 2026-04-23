@@ -52,6 +52,7 @@ export async function POST(request: NextRequest) {
    - 不要用比喻句（"仿佛""犹如"）
    - 不要说教或鸡汤
    - 不要用"你会经历..."这种第二人称，用客观叙述
+   - 不要使用任何emoji表情符号
 
 ## 示例格式
 

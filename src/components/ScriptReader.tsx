@@ -40,8 +40,9 @@ export function ScriptReader({ script, onSave, onEdit, isSaved }: ScriptReaderPr
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Split content into sections by emoji headers (e.g. "🥀 童年：xxx")
-  const sections = splitIntoSections(script.content);
+  // Split content into sections by emoji headers, then extract summary & highlights
+  const { storySections, summary, highlights } = parseContent(script.content);
+  const sections = storySections;
 
   // Chinese numerals for chapter numbering
   const cnNums = ['〇','一','二','三','四','五','六','七','八','九','十',
@@ -149,6 +150,41 @@ export function ScriptReader({ script, onSave, onEdit, isSaved }: ScriptReaderPr
         {showFull && (
           <div className="chapter-ornament mt-4 mb-2">· · ·</div>
         )}
+
+        {/* Final Summary */}
+        {showFull && summary && (
+          <div className="mt-8 mb-10 rounded-xl border border-border/50 bg-muted/30 p-6">
+            <h3 className="text-lg font-semibold font-heading mb-3 text-accent-foreground">
+              最终总结
+            </h3>
+            <p className="text-base leading-[1.8] tracking-wide text-muted-foreground italic">
+              {summary}
+            </p>
+          </div>
+        )}
+
+        {/* Highlight Sentences */}
+        {showFull && highlights.length > 0 && (
+          <div className="mt-4 mb-10">
+            <h3 className="text-lg font-semibold font-heading mb-4 text-accent-foreground">
+              高光句子
+            </h3>
+            <div className="space-y-3">
+              {highlights.map((sentence, i) => (
+                <div
+                  key={i}
+                  className="flex items-start gap-3 rounded-lg border border-border/30 bg-muted/20 px-5 py-4"
+                >
+                  <span className="mt-0.5 text-accent-foreground/60 text-lg leading-none select-none">「</span>
+                  <p className="text-base leading-[1.8] tracking-wide flex-1">
+                    {sentence}
+                  </p>
+                  <span className="mt-0.5 text-accent-foreground/60 text-lg leading-none select-none">」</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Bottom actions */}
@@ -176,6 +212,43 @@ export function ScriptReader({ script, onSave, onEdit, isSaved }: ScriptReaderPr
       </div>
     </div>
   );
+}
+
+function parseContent(content: string) {
+  // Split by "---" separator to separate story from summary/highlights
+  const parts = content.split(/\n---\n/);
+  const storyText = parts[0];
+  const extraText = parts.slice(1).join('\n---\n');
+
+  // Parse story sections (existing logic)
+  const storySections = splitIntoSections(storyText);
+
+  // Parse summary and highlights from extra text
+  let summary = '';
+  const highlights: string[] = [];
+
+  if (extraText) {
+    const summaryMatch = extraText.match(/##\s*最终总结\s*\n([\s\S]*?)(?=\n##\s*高光句子|$)/);
+    if (summaryMatch) {
+      summary = summaryMatch[1].trim();
+    }
+
+    const highlightsMatch = extraText.match(/##\s*高光句子\s*\n([\s\S]*?)$/);
+    if (highlightsMatch) {
+      const lines = highlightsMatch[1].split('\n').map(l => l.trim()).filter(Boolean);
+      for (const line of lines) {
+        // Extract sentences from 「」 brackets, or use the line as-is
+        const bracketMatch = line.match(/「(.+?)」/);
+        if (bracketMatch) {
+          highlights.push(bracketMatch[1]);
+        } else if (!line.startsWith('#') && !line.startsWith('-')) {
+          highlights.push(line);
+        }
+      }
+    }
+  }
+
+  return { storySections, summary, highlights };
 }
 
 function splitIntoSections(content: string) {

@@ -16,7 +16,8 @@ export async function POST(
   }
 
   const personId = parseInt(id);
-  const { questions } = await request.json();
+  const body = await request.json().catch(() => ({}));
+  const questions = body.questions || [];
 
   const { data: person } = await supabase
     .from('hall_of_fame')
@@ -52,13 +53,14 @@ export async function POST(
 ## 核心规则（必须严格遵守）
 
 1. **视角**：全程使用第二人称"你"叙述，读者就是${person.name}
-2. **结构**：分8-12个人生阶段，每个阶段用emoji+标题标注
+2. **结构**：分8-12个人生阶段，每个阶段用「## 标题」标注
 3. **篇幅**：总字数6000-8000字
 4. **叙事风格**：纪实文学风格，像在讲一个真实发生过的人生
 5. **细节密度**：每个段落必须有具体的数字、地点、物品、对话
 6. **历史背景**：融入${person.era}时期的历史背景和社会环境
 7. **人物弧线**：主角必须经历完整的成长弧线
 8. **结局**：不要大团圆，留有余味
+9. **禁止emoji**：不要使用任何emoji表情符号
 
 ## 人物信息
 姓名：${person.name}
@@ -69,7 +71,17 @@ export async function POST(
 ${qaText ? `## 用户的个性化选择\n${qaText}` : ''}
 
 ## 输出要求
-直接输出故事正文，不要标题行，不要前言后记。第一行从第一个emoji阶段开始。`;
+直接输出故事正文，不要标题行，不要前言后记。第一行从第一个阶段标题开始（用##标记）。
+
+故事写完后，另起一行输出以下内容（用三个短横线分隔）：
+
+---
+
+## 最终总结
+用2-3句话总结这个人的一生，语气冷静克制，像墓志铭一样精炼。
+
+## 高光句子
+从故事中挑选5-8句最震撼人心的句子（必须是故事原文中的原句），每句单独一行，用「」包裹。这些句子应该覆盖人生的不同阶段，能让人不读全文也被击中。`;
 
   try {
     const generatedContent = await callAI(aiConfig, prompt, { maxTokens: 16000 });

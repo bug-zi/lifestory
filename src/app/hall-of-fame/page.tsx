@@ -36,13 +36,6 @@ interface Exploration {
   script_id: string | null;
 }
 
-interface Question {
-  id: number;
-  stage?: string;
-  question: string;
-  options?: string[];
-}
-
 const categories = [
   { value: 'all', label: '全部' },
   { value: '政治', label: '政治' },
@@ -62,6 +55,12 @@ const eras = [
   { value: '古代', label: '古代' },
   { value: '近代', label: '近代' },
   { value: '现代', label: '现代' },
+];
+
+const regions = [
+  { value: 'all', label: '全部' },
+  { value: '国内', label: '国内' },
+  { value: '国外', label: '国外' },
 ];
 
 const categoryGradients: Record<string, string> = {
@@ -98,6 +97,7 @@ export default function HallOfFamePage() {
   const [loading, setLoading] = useState(true);
   const [category, setCategory] = useState('all');
   const [era, setEra] = useState('all');
+  const [region, setRegion] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
@@ -106,13 +106,10 @@ export default function HallOfFamePage() {
   // Dialog state
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
-  const [dialogStep, setDialogStep] = useState<'intro' | 'questions' | 'generating' | 'done'>('intro');
-  const [questions, setQuestions] = useState<Question[]>([]);
-  const [answers, setAnswers] = useState<Record<number, string>>({});
+  const [dialogStep, setDialogStep] = useState<'intro' | 'generating' | 'done'>('intro');
   const [generatedScriptId, setGeneratedScriptId] = useState<string | null>(null);
-  const [actionLoading, setActionLoading] = useState(false);
 
-  useEffect(() => { filterPeople(); }, [people, category, era, searchQuery]);
+  useEffect(() => { filterPeople(); }, [people, category, era, region, searchQuery]);
 
   async function loadData() {
     setLoading(true);
@@ -145,6 +142,12 @@ export default function HallOfFamePage() {
     let filtered = [...people];
     if (category !== 'all') filtered = filtered.filter((p) => p.category === category);
     if (era !== 'all') filtered = filtered.filter((p) => p.era === era);
+    if (region !== 'all') {
+      filtered = filtered.filter((p) => {
+        const isChinese = p.country === '中国' || p.country?.includes('中国');
+        return region === '国内' ? isChinese : !isChinese;
+      });
+    }
     if (searchQuery.trim()) {
       filtered = filtered.filter((p) =>
         p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -176,8 +179,6 @@ export default function HallOfFamePage() {
       setDialogStep('intro');
       setGeneratedScriptId(null);
     }
-    setQuestions([]);
-    setAnswers({});
     setDialogOpen(true);
   }
 
@@ -187,32 +188,12 @@ export default function HallOfFamePage() {
       return;
     }
     if (!selectedPerson) return;
-    setActionLoading(true);
-    try {
-      const res = await fetch(`/api/hall-of-fame/${selectedPerson.id}/questions`, { method: 'POST' });
-      const data = await res.json();
-      if (data.questions?.length > 0) {
-        setQuestions(data.questions);
-        setDialogStep('questions');
-      } else {
-        toast.error(data.error || '生成问题失败');
-      }
-    } catch {
-      toast.error('生成问题失败');
-    } finally {
-      setActionLoading(false);
-    }
-  }
-
-  async function handleGenerate() {
-    if (!selectedPerson) return;
-    const qa = questions.map((q) => ({ question: q.question, answer: answers[q.id] || '' }));
     setDialogStep('generating');
     try {
       const res = await fetch(`/api/hall-of-fame/${selectedPerson.id}/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ questions: qa }),
+        body: JSON.stringify({}),
       });
       const data = await res.json();
       if (data.script) {
@@ -226,11 +207,11 @@ export default function HallOfFamePage() {
         toast.success('人生副本生成成功！');
       } else {
         toast.error(data.error || '生成失败');
-        setDialogStep('questions');
+        setDialogStep('intro');
       }
     } catch {
       toast.error('生成失败');
-      setDialogStep('questions');
+      setDialogStep('intro');
     }
   }
 
@@ -256,7 +237,7 @@ export default function HallOfFamePage() {
     }
   }
 
-  const dialogMaxWidth = dialogStep === 'questions' ? 'sm:max-w-xl' : dialogStep === 'generating' ? 'sm:max-w-sm' : 'sm:max-w-lg';
+  const dialogMaxWidth = dialogStep === 'generating' ? 'sm:max-w-sm' : 'sm:max-w-lg';
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8">
@@ -293,6 +274,14 @@ export default function HallOfFamePage() {
             {eras.map((e) => (
               <Button key={e.value} variant={era === e.value ? 'default' : 'ghost'} size="sm" className="h-7 text-xs rounded-full" onClick={() => setEra(e.value)}>
                 {e.label}
+              </Button>
+            ))}
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <MapPin className="h-4 w-4 text-muted-foreground shrink-0" />
+            {regions.map((r) => (
+              <Button key={r.value} variant={region === r.value ? 'default' : 'ghost'} size="sm" className="h-7 text-xs rounded-full" onClick={() => setRegion(r.value)}>
+                {r.label}
               </Button>
             ))}
           </div>
@@ -392,8 +381,8 @@ export default function HallOfFamePage() {
                   </div>
                   <div className="flex justify-end pt-2">
                     {isLoggedIn ? (
-                      <Button onClick={handleStartExploration} disabled={actionLoading} className="gap-2">
-                        {actionLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                      <Button onClick={handleStartExploration} className="gap-2">
+                        <Sparkles className="h-4 w-4" />
                         生成人生副本
                       </Button>
                     ) : (
@@ -404,57 +393,6 @@ export default function HallOfFamePage() {
                         </Button>
                       </Link>
                     )}
-                  </div>
-                </div>
-              )}
-
-              {/* === QUESTIONS STEP === */}
-              {dialogStep === 'questions' && (
-                <div className="space-y-4">
-                  <div>
-                    <DialogTitle className="text-lg font-bold">定制「{selectedPerson.name}」的人生</DialogTitle>
-                    <DialogDescription className="mt-1">回答几个关键抉择，让AI为你量身打造这段人生副本</DialogDescription>
-                  </div>
-                  <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-1">
-                    {questions.map((q, index) => (
-                      <div key={q.id} className="rounded-lg border p-4">
-                        <div className="flex items-center gap-2 mb-2">
-                          {q.stage ? (
-                            <span className="text-xs px-2 py-1 bg-primary/10 text-primary rounded-full">{q.stage}</span>
-                          ) : (
-                            <span className="text-xs px-2 py-1 bg-muted text-muted-foreground rounded-full">阶段 {index + 1}/{questions.length}</span>
-                          )}
-                        </div>
-                        <p className="text-sm font-medium mb-3">{q.question}</p>
-                        {q.options ? (
-                          <div className="flex flex-col gap-2">
-                            {q.options.map((opt, i) => (
-                              <Button
-                                key={i}
-                                variant={answers[q.id] === opt ? 'default' : 'outline'}
-                                className="justify-start text-left h-auto py-2.5 whitespace-normal text-sm"
-                                onClick={() => setAnswers((prev) => ({ ...prev, [q.id]: opt }))}
-                              >
-                                {opt}
-                              </Button>
-                            ))}
-                          </div>
-                        ) : (
-                          <Input
-                            placeholder="自由输入你的想法..."
-                            value={answers[q.id] || ''}
-                            onChange={(e) => setAnswers((prev) => ({ ...prev, [q.id]: e.target.value }))}
-                          />
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                  <div className="flex justify-between pt-2">
-                    <Button variant="ghost" onClick={() => setDialogStep('intro')}>返回介绍</Button>
-                    <Button onClick={handleGenerate} className="gap-2">
-                      <Sparkles className="h-4 w-4" />
-                      生成人生副本
-                    </Button>
                   </div>
                 </div>
               )}

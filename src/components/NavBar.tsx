@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   BookOpen, Compass, Sparkles, Menu, UserCircle, Clock, Trophy, LogOut,
-  Sun, Moon, ScrollText, Library, Coins, ChevronDown,
+  Sun, Moon, ScrollText, Library, Coins, ChevronDown, Network, ScanEye, Mail,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -23,6 +23,9 @@ const coreNavItems = [
 ];
 
 const moreNavItems = [
+  { href: '/constellation', label: '命运星图', icon: Network },
+  { href: '/soul-mirror', label: '灵魂镜像', icon: ScanEye },
+  { href: '/postcard', label: '人生明信片', icon: Mail },
   { href: '/library', label: '人生库', icon: Library },
   { href: '/read-later', label: '稍后再读', icon: Clock },
   { href: '/tokens', label: '印记商店', icon: Coins },
