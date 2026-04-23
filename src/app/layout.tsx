@@ -27,6 +27,10 @@ export const metadata: Metadata = {
   title: "人生副本 — 你想活出怎样的人生",
   description:
     "每天体验一段截然不同的人生。从500份精选人生副本中，发现你从未想象过的可能。",
+  icons: {
+    icon: "/images/lifestory.png",
+    apple: "/images/lifestory.png",
+  },
 };
 
 export default function RootLayout({

@@ -20,13 +20,13 @@ const coreNavItems = [
   { href: '/scripts/daily', label: '每日副本', icon: BookOpen },
   { href: '/diy', label: 'DIY人生', icon: Sparkles },
   { href: '/hall-of-fame', label: '名人堂', icon: Trophy },
+  { href: '/library', label: '人生库', icon: Library },
 ];
 
 const moreNavItems = [
   { href: '/constellation', label: '命运星图', icon: Network },
   { href: '/soul-mirror', label: '灵魂镜像', icon: ScanEye },
   { href: '/postcard', label: '人生明信片', icon: Mail },
-  { href: '/library', label: '人生库', icon: Library },
   { href: '/read-later', label: '稍后再读', icon: Clock },
   { href: '/tokens', label: '印记商店', icon: Coins },
 ];
@@ -71,7 +71,7 @@ export function NavBar() {
       <div className="mx-auto grid h-14 max-w-5xl grid-cols-[auto_1fr_auto] items-center gap-4 px-4 sm:px-6 lg:px-8">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 font-bold text-lg tracking-tight" style={{ fontFamily: 'var(--font-heading), serif' }}>
-          <ScrollText className="h-5 w-5 text-accent" />
+          <img src="/images/lifestory.png" alt="人生副本" className="h-7 w-7 rounded-md" />
           <span>人生副本</span>
         </Link>
 
