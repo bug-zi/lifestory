@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
   BookOpen, Compass, Sparkles, Menu, UserCircle, Clock, Trophy, LogOut,
   Sun, Moon, ScrollText, Library, Coins, ChevronDown, Network, ScanEye, Mail,
+  Feather,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -28,6 +29,7 @@ const moreNavItems = [
   { href: '/soul-mirror', label: '灵魂镜像', icon: ScanEye },
   { href: '/postcard', label: '人生明信片', icon: Mail },
   { href: '/read-later', label: '稍后再读', icon: Clock },
+  { href: '/literary-library', label: '文学库', icon: Feather },
   { href: '/tokens', label: '印记商店', icon: Coins },
 ];
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -8,26 +8,66 @@ import {
   Bookmark,
   ChevronDown,
   ChevronUp,
-  Share2,
-  PenLine,
   ArrowLeft,
+  Clock,
+  BookmarkPlus,
 } from 'lucide-react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 import type { Script } from '@/types';
 
 interface ScriptReaderProps {
   script: Script;
   onSave?: () => void;
-  onEdit?: () => void;
   isSaved?: boolean;
+  onReadLater?: () => void;
+  isReadLater?: boolean;
 }
 
-export function ScriptReader({ script, onSave, onEdit, isSaved }: ScriptReaderProps) {
+export function ScriptReader({ script, onSave, isSaved, onReadLater, isReadLater }: ScriptReaderProps) {
   const router = useRouter();
   const [showFull, setShowFull] = useState(false);
   const [readingProgress, setReadingProgress] = useState(0);
+  const [selection, setSelection] = useState<{ text: string; x: number; y: number } | null>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+
+  // Detect text selection for "add to literary library"
+  useEffect(() => {
+    function handleMouseUp() {
+      const sel = window.getSelection();
+      const text = sel?.toString().trim();
+      if (text && text.length > 0 && contentRef.current?.contains(sel!.anchorNode)) {
+        const range = sel!.getRangeAt(0);
+        const rect = range.getBoundingClientRect();
+        setSelection({ text, x: rect.left + rect.width / 2, y: rect.top - 8 });
+      } else {
+        setSelection(null);
+      }
+    }
+    document.addEventListener('mouseup', handleMouseUp);
+    return () => document.removeEventListener('mouseup', handleMouseUp);
+  }, []);
+
+  const handleAddToLiteraryLibrary = useCallback(async () => {
+    if (!selection) return;
+    try {
+      const res = await fetch('/api/literary-library', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content: selection.text,
+          script_id: script.id,
+          script_title: script.title,
+        }),
+      });
+      if (!res.ok) throw new Error();
+      toast.success('已添加到文学库');
+      setSelection(null);
+      window.getSelection()?.removeAllRanges();
+    } catch {
+      toast.error('添加失败');
+    }
+  }, [selection, script]);
 
   useEffect(() => {
     function handleScroll() {
@@ -58,159 +98,171 @@ export function ScriptReader({ script, onSave, onEdit, isSaved }: ScriptReaderPr
         />
       </div>
 
-      {/* Header */}
-      <div className="mb-8">
-        <Button variant="ghost" size="sm" className="gap-1 mb-4 -ml-2" onClick={() => router.back()}>
-          <ArrowLeft className="h-4 w-4" />
-          返回
+      {/* Floating "add to literary library" button on text selection */}
+      {selection && (
+        <button
+          onClick={handleAddToLiteraryLibrary}
+          className="fixed z-50 flex items-center gap-1.5 rounded-lg border bg-background px-3 py-1.5 text-sm shadow-lg transition-opacity hover:bg-accent"
+          style={{ left: selection.x, top: selection.y, transform: 'translate(-50%, -100%)' }}
+        >
+          <BookmarkPlus className="h-4 w-4" />
+          添加到文学库
+        </button>
+      )}
+
+      {/* Right sidebar — fixed on the right */}
+      <aside className="hidden md:flex fixed right-6 top-1/2 -translate-y-1/2 z-30 flex-col gap-3 w-36">
+        <Button
+          variant={isSaved ? 'default' : 'outline'}
+          size="sm"
+          className="gap-1.5 w-full justify-start"
+          onClick={onSave}
+        >
+          <Bookmark className="h-4 w-4" />
+          {isSaved ? '从人生库移除' : '添加到人生库'}
         </Button>
-        <h1 className="text-3xl md:text-4xl font-bold font-heading">{script.title}</h1>
-        {script.subtitle && (
-          <p className="mt-2 text-lg text-muted-foreground">{script.subtitle}</p>
-        )}
-        <div className="mt-4 flex flex-wrap items-center gap-2">
-          {script.tags?.map((tag) => (
-            <Badge key={tag} variant="secondary">
-              {tag}
-            </Badge>
-          ))}
-          {script.word_count && (
-            <span className="text-sm text-muted-foreground">
-              {script.word_count} 字
-            </span>
-          )}
-          {script.mood && (
-            <Badge variant="outline">{script.mood}</Badge>
-          )}
-        </div>
-      </div>
-
-      <Separator className="mb-8" />
-
-      {/* Content */}
-      <div ref={contentRef} className="prose prose-neutral max-w-none">
-        {sections.map((section, i) => {
-          if (showFull || i < 3) {
-            const isLastVisible = (showFull && i === sections.length - 1) || (!showFull && i === 2 && sections.length > 3);
-            return (
-              <div key={i} className="mb-10">
-                {section.title && (
-                  <div className="flex items-center gap-3 mb-5">
-                    <span className="section-number">卷{cnNums[i + 1] || i + 1}</span>
-                    <h2 className="text-xl font-semibold font-heading">
-                      {section.title}
-                    </h2>
-                  </div>
-                )}
-                <div className="text-base leading-[1.8] tracking-wide whitespace-pre-wrap">
-                  {section.paragraphs.map((p, j) => (
-                    <p key={j} className={`mb-6 indent-8 ${j === 0 && i === 0 ? 'drop-cap' : ''}`}>
-                      {p}
-                    </p>
-                  ))}
-                </div>
-                {!isLastVisible && <div className="ink-divider" />}
-              </div>
-            );
-          }
-          return null;
-        })}
-
-        {!showFull && sections.length > 3 && (
-          <div className="text-center py-8">
-            <Button
-              variant="outline"
-              size="lg"
-              onClick={() => setShowFull(true)}
-              className="gap-2"
-            >
-              <ChevronDown className="h-4 w-4" />
-              继续阅读
-            </Button>
-          </div>
-        )}
-        {showFull && sections.length > 3 && (
-          <div className="text-center py-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setShowFull(false);
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
-              className="gap-1"
-            >
-              <ChevronUp className="h-4 w-4" />
-              收起
-            </Button>
-          </div>
-        )}
-
-        {/* Ending ornament */}
-        {showFull && (
-          <div className="chapter-ornament mt-4 mb-2">· · ·</div>
-        )}
-
-        {/* Final Summary */}
-        {showFull && summary && (
-          <div className="mt-8 mb-10 rounded-xl border border-border/50 bg-muted/30 p-6">
-            <h3 className="text-lg font-semibold font-heading mb-3 text-accent-foreground">
-              最终总结
-            </h3>
-            <p className="text-base leading-[1.8] tracking-wide text-muted-foreground italic">
-              {summary}
-            </p>
-          </div>
-        )}
-
-        {/* Highlight Sentences */}
-        {showFull && highlights.length > 0 && (
-          <div className="mt-4 mb-10">
-            <h3 className="text-lg font-semibold font-heading mb-4 text-accent-foreground">
-              高光句子
-            </h3>
-            <div className="space-y-3">
-              {highlights.map((sentence, i) => (
-                <div
-                  key={i}
-                  className="flex items-start gap-3 rounded-lg border border-border/30 bg-muted/20 px-5 py-4"
-                >
-                  <span className="mt-0.5 text-accent-foreground/60 text-lg leading-none select-none">「</span>
-                  <p className="text-base leading-[1.8] tracking-wide flex-1">
-                    {sentence}
-                  </p>
-                  <span className="mt-0.5 text-accent-foreground/60 text-lg leading-none select-none">」</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Bottom actions */}
-      <Separator className="my-8" />
-      <div className="flex items-center justify-between">
-        <div className="flex gap-2">
+        {onReadLater && (
           <Button
-            variant={isSaved ? 'default' : 'outline'}
+            variant={isReadLater ? 'default' : 'outline'}
             size="sm"
-            className="gap-1.5"
-            onClick={onSave}
+            className="gap-1.5 w-full justify-start"
+            onClick={onReadLater}
           >
-            <Bookmark className="h-4 w-4" />
-            {isSaved ? '已保存' : '保存到人生库'}
+            <Clock className="h-4 w-4" />
+            {isReadLater ? '已在待读' : '稍后再读'}
           </Button>
-          <Button variant="outline" size="sm" className="gap-1.5" onClick={onEdit}>
-            <PenLine className="h-4 w-4" />
-            二次创作
+        )}
+      </aside>
+
+      {/* Header */}
+        <div className="mb-8">
+          <Button variant="ghost" size="sm" className="gap-1 mb-4 -ml-2" onClick={() => router.back()}>
+            <ArrowLeft className="h-4 w-4" />
+            返回
           </Button>
+          <h1 className="text-3xl md:text-4xl font-bold font-heading">{script.title}</h1>
+          {script.subtitle && (
+            <p className="mt-2 text-lg text-muted-foreground">{script.subtitle}</p>
+          )}
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            {script.tags?.map((tag) => (
+              <Badge key={tag} variant="secondary">
+                {tag}
+              </Badge>
+            ))}
+            {script.word_count && (
+              <span className="text-sm text-muted-foreground">
+                {script.word_count} 字
+              </span>
+            )}
+            {script.mood && (
+              <Badge variant="outline">{script.mood}</Badge>
+            )}
+          </div>
         </div>
-        <Button variant="ghost" size="sm" className="gap-1.5">
-          <Share2 className="h-4 w-4" />
-          分享
-        </Button>
+
+        <Separator className="mb-8" />
+
+        {/* Content */}
+        <div ref={contentRef} className="prose prose-neutral max-w-none">
+          {sections.map((section, i) => {
+            if (showFull || i < 3) {
+              const isLastVisible = (showFull && i === sections.length - 1) || (!showFull && i === 2 && sections.length > 3);
+              return (
+                <div key={i} className="mb-10">
+                  {section.title && (
+                    <div className="flex items-center gap-3 mb-5">
+                      <span className="section-number">卷{cnNums[i + 1] || i + 1}</span>
+                      <h2 className="text-xl font-semibold font-heading">
+                        {section.title}
+                      </h2>
+                    </div>
+                  )}
+                  <div className="text-base leading-[1.8] tracking-wide whitespace-pre-wrap">
+                    {section.paragraphs.map((p, j) => (
+                      <p key={j} className={`mb-6 indent-8 ${j === 0 && i === 0 ? 'drop-cap' : ''}`}>
+                        {p}
+                      </p>
+                    ))}
+                  </div>
+                  {!isLastVisible && <div className="ink-divider" />}
+                </div>
+              );
+            }
+            return null;
+          })}
+
+          {!showFull && sections.length > 3 && (
+            <div className="text-center py-8">
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={() => setShowFull(true)}
+                className="gap-2"
+              >
+                <ChevronDown className="h-4 w-4" />
+                继续阅读
+              </Button>
+            </div>
+          )}
+          {showFull && sections.length > 3 && (
+            <div className="text-center py-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setShowFull(false);
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                className="gap-1"
+              >
+                <ChevronUp className="h-4 w-4" />
+                收起
+              </Button>
+            </div>
+          )}
+
+          {/* Ending ornament */}
+          {showFull && (
+            <div className="chapter-ornament mt-4 mb-2">· · ·</div>
+          )}
+
+          {/* Final Summary */}
+          {showFull && summary && (
+            <div className="mt-8 mb-10 rounded-xl border border-border/50 bg-muted/30 p-6">
+              <h3 className="text-lg font-semibold font-heading mb-3 text-accent-foreground">
+                最终总结
+              </h3>
+              <p className="text-base leading-[1.8] tracking-wide text-muted-foreground italic">
+                {summary}
+              </p>
+            </div>
+          )}
+
+          {/* Highlight Sentences */}
+          {showFull && highlights.length > 0 && (
+            <div className="mt-4 mb-10">
+              <h3 className="text-lg font-semibold font-heading mb-4 text-accent-foreground">
+                高光句子
+              </h3>
+              <div className="space-y-3">
+                {highlights.map((sentence, i) => (
+                  <div
+                    key={i}
+                    className="flex items-start gap-3 rounded-lg border border-border/30 bg-muted/20 px-5 py-4"
+                  >
+                    <span className="mt-0.5 text-accent-foreground/60 text-lg leading-none select-none">「</span>
+                    <p className="text-base leading-[1.8] tracking-wide flex-1">
+                      {sentence}
+                    </p>
+                    <span className="mt-0.5 text-accent-foreground/60 text-lg leading-none select-none">」</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
   );
 }
 
