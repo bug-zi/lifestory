@@ -223,39 +223,57 @@ export function ScriptReader({ script, onSave, isSaved, onReadLater, isReadLater
           )}
 
           {/* Ending ornament */}
-          {showFull && (
+          {(showFull || sections.length <= 3) && (
             <div className="chapter-ornament mt-4 mb-2">· · ·</div>
           )}
 
           {/* Final Summary */}
-          {showFull && summary && (
-            <div className="mt-8 mb-10 rounded-xl border border-border/50 bg-muted/30 p-6">
-              <h3 className="text-lg font-semibold font-heading mb-3 text-accent-foreground">
-                最终总结
-              </h3>
-              <p className="text-base leading-[1.8] tracking-wide text-muted-foreground italic">
-                {summary}
-              </p>
+          {(showFull || sections.length <= 3) && summary && (
+            <div
+              className="mt-8 mb-10 rounded-2xl overflow-hidden shadow-lg relative"
+              style={{
+                backgroundImage: 'url(/images/UI1.jpg)',
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+              }}
+            >
+              <div className="absolute inset-0 bg-white/55 backdrop-blur-[2px]" />
+              <div className="relative z-10 p-6 md:p-8">
+                <h3 className="text-lg font-semibold font-heading mb-3 text-gray-800/90 tracking-wider">
+                  ✦ 最终总结
+                </h3>
+                <p className="text-base leading-[1.8] tracking-wide text-gray-700/90 italic">
+                  {summary}
+                </p>
+              </div>
             </div>
           )}
 
           {/* Highlight Sentences */}
-          {showFull && highlights.length > 0 && (
+          {(showFull || sections.length <= 3) && highlights.length > 0 && (
             <div className="mt-4 mb-10">
-              <h3 className="text-lg font-semibold font-heading mb-4 text-accent-foreground">
-                高光句子
+              <h3 className="text-lg font-semibold font-heading mb-4 text-accent-foreground tracking-wider">
+                ✦ 高光句子
               </h3>
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {highlights.map((sentence, i) => (
                   <div
                     key={i}
-                    className="flex items-start gap-3 rounded-lg border border-border/30 bg-muted/20 px-5 py-4"
+                    className="rounded-2xl overflow-hidden shadow-lg relative"
+                    style={{
+                      backgroundImage: 'url(/images/UI1.jpg)',
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                    }}
                   >
-                    <span className="mt-0.5 text-accent-foreground/60 text-lg leading-none select-none">「</span>
-                    <p className="text-base leading-[1.8] tracking-wide flex-1">
-                      {sentence}
-                    </p>
-                    <span className="mt-0.5 text-accent-foreground/60 text-lg leading-none select-none">」</span>
+                    <div className="absolute inset-0 bg-white/55 backdrop-blur-[2px]" />
+                    <div className="relative z-10 flex items-start gap-3 px-5 py-4 md:px-6 md:py-5">
+                      <span className="mt-0.5 text-gray-400 text-xl leading-none select-none font-serif">「</span>
+                      <p className="text-base leading-[1.8] tracking-wide flex-1 text-gray-700/90">
+                        {sentence}
+                      </p>
+                      <span className="mt-0.5 text-gray-400 text-xl leading-none select-none font-serif">」</span>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -269,11 +287,18 @@ export function ScriptReader({ script, onSave, isSaved, onReadLater, isReadLater
 function parseContent(content: string) {
   // Split by "---" separator to separate story from summary/highlights
   const parts = content.split(/\n---\n/);
+  // If no separator, use full content as both story and extra text
+  const hasSeparator = parts.length > 1;
   const storyText = parts[0];
-  const extraText = parts.slice(1).join('\n---\n');
+  const extraText = hasSeparator ? parts.slice(1).join('\n---\n') : content;
 
-  // Parse story sections (existing logic)
-  const storySections = splitIntoSections(storyText);
+  // Parse story sections — strip summary/highlights from story portion
+  let storyOnly = storyText;
+  if (!hasSeparator) {
+    const cutIdx = storyText.search(/\n##\s*最终总结/);
+    if (cutIdx > 0) storyOnly = storyText.slice(0, cutIdx);
+  }
+  const storySections = splitIntoSections(storyOnly);
 
   // Parse summary and highlights from extra text
   let summary = '';
@@ -289,7 +314,6 @@ function parseContent(content: string) {
     if (highlightsMatch) {
       const lines = highlightsMatch[1].split('\n').map(l => l.trim()).filter(Boolean);
       for (const line of lines) {
-        // Extract sentences from 「」 brackets, or use the line as-is
         const bracketMatch = line.match(/「(.+?)」/);
         if (bracketMatch) {
           highlights.push(bracketMatch[1]);
