@@ -124,7 +124,7 @@ body::before {
   content: '';
   position: fixed;
   inset: 0;
-  background-image: url('/images/bg1.jpg');
+  background-image: url('/images/bg2.jpg');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -137,6 +137,12 @@ body::before {
 .dark body::before {
   opacity: 0.04;
   mix-blend-mode: screen;
+}
+
+@media (max-width: 640px) {
+  body::before {
+    background-image: url('/images/bg3.jpg');
+  }
 }
 
 @layer base {
