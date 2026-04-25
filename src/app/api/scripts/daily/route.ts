@@ -46,8 +46,7 @@ export async function GET() {
     }
   }
 
-  // Get a random script using database function
-  // Use date-based seed for "daily" feel, but allow multiple reads
+  // Get a random script, excluding completed ones for logged-in users
   const { data: scripts, error } = await supabase
     .from('scripts')
     .select('*')
@@ -60,9 +59,30 @@ export async function GET() {
     );
   }
 
+  // Exclude completed scripts for logged-in users
+  let available = scripts;
+  if (user) {
+    const { data: completed } = await supabase
+      .from('completed_scripts')
+      .select('script_id')
+      .eq('user_id', user.id);
+
+    if (completed && completed.length > 0) {
+      const completedIds = new Set(completed.map((r) => r.script_id));
+      available = scripts.filter((s) => !completedIds.has(s.id));
+    }
+  }
+
+  if (available.length === 0) {
+    return NextResponse.json(
+      { error: '你已读完全部副本', allCompleted: true },
+      { status: 200 }
+    );
+  }
+
   // Random selection
-  const randomIndex = Math.floor(Math.random() * scripts.length);
-  const script = scripts[randomIndex];
+  const randomIndex = Math.floor(Math.random() * available.length);
+  const script = available[randomIndex];
 
   // Increment view count
   await supabase

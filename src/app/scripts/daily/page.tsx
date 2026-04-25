@@ -15,6 +15,8 @@ export default function DailyScriptPage() {
   const [loading, setLoading] = useState(true);
   const [needsToken, setNeedsToken] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+  const [isReadLater, setIsReadLater] = useState(false);
+  const [isCompleted, setIsCompleted] = useState(false);
 
   useEffect(() => {
     fetchDailyScript();
@@ -28,6 +30,11 @@ export default function DailyScriptPage() {
       const data = await res.json();
       if (res.status === 402) {
         setNeedsToken(true);
+        return;
+      }
+      if (data.allCompleted) {
+        setScript(null);
+        setLoading(false);
         return;
       }
       if (!res.ok) throw new Error(data.error);
@@ -56,6 +63,51 @@ export default function DailyScriptPage() {
       toast.success('已保存到人生库');
     } catch {
       toast.error('保存失败');
+    }
+  }
+
+  async function handleReadLater() {
+    if (!script) return;
+    if (!authUser) {
+      toast.error('请先登录');
+      return;
+    }
+    try {
+      if (isReadLater) {
+        await fetch(`/api/read-later?script_id=${script.id}`, { method: 'DELETE' });
+        setIsReadLater(false);
+        toast.success('已从稍后再读移除');
+      } else {
+        await fetch('/api/read-later', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ script_id: script.id }),
+        });
+        setIsReadLater(true);
+        toast.success('已添加到稍后再读');
+      }
+    } catch {
+      toast.error('操作失败');
+    }
+  }
+
+  async function handleComplete() {
+    if (!script) return;
+    if (!authUser) {
+      toast.error('请先登录');
+      return;
+    }
+    try {
+      const res = await fetch('/api/scripts/complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ script_id: script.id }),
+      });
+      if (!res.ok) throw new Error();
+      setIsCompleted(true);
+      toast.success('已完成阅读，下次将抽取新副本');
+    } catch {
+      toast.error('标记失败');
     }
   }
 
@@ -119,6 +171,10 @@ export default function DailyScriptPage() {
       script={script}
       onSave={handleSave}
       isSaved={isSaved}
+      onReadLater={handleReadLater}
+      isReadLater={isReadLater}
+      onComplete={handleComplete}
+      isCompleted={isCompleted}
     />
   );
 }

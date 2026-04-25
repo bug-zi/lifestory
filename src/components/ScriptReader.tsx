@@ -16,15 +16,19 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import type { Script } from '@/types';
 
+import { CheckCircle2 } from 'lucide-react';
+
 interface ScriptReaderProps {
   script: Script;
   onSave?: () => void;
   isSaved?: boolean;
   onReadLater?: () => void;
   isReadLater?: boolean;
+  onComplete?: () => void;
+  isCompleted?: boolean;
 }
 
-export function ScriptReader({ script, onSave, isSaved, onReadLater, isReadLater }: ScriptReaderProps) {
+export function ScriptReader({ script, onSave, isSaved, onReadLater, isReadLater, onComplete, isCompleted }: ScriptReaderProps) {
   const router = useRouter();
   const [showFull, setShowFull] = useState(false);
   const [readingProgress, setReadingProgress] = useState(0);
@@ -277,6 +281,21 @@ export function ScriptReader({ script, onSave, isSaved, onReadLater, isReadLater
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+          {/* Complete Reading Button */}
+          {onComplete && (showFull || sections.length <= 3) && (
+            <div className="text-center mt-12 mb-8">
+              <Button
+                variant={isCompleted ? 'default' : 'outline'}
+                size="lg"
+                onClick={onComplete}
+                disabled={isCompleted}
+                className="gap-2 min-w-[200px]"
+              >
+                <CheckCircle2 className="h-5 w-5" />
+                {isCompleted ? '已完成阅读' : '完成阅读'}
+              </Button>
             </div>
           )}
         </div>
