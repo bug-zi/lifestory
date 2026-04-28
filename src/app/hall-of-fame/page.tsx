@@ -14,6 +14,7 @@ import {
 import {
   Search, Trophy, MapPin, Clock, Tag, Sparkles, Loader2, LogIn, BookOpen, CheckCircle2,
   Landmark, Swords, FlaskConical, Palette, PenTool, Brain, Briefcase, GraduationCap, Hand,
+  RefreshCw,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuthContext } from '@/components/auth-provider';
@@ -428,10 +429,16 @@ export default function HallOfFamePage() {
                           阅读人生副本
                         </Button>
                       </Link>
-                      <Button variant="outline" className="w-full gap-2" onClick={handleAddToReadLater}>
-                        <Clock className="h-4 w-4" />
-                        稍后再读
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button variant="outline" className="flex-1 gap-2" onClick={handleAddToReadLater}>
+                          <Clock className="h-4 w-4" />
+                          稍后再读
+                        </Button>
+                        <Button variant="outline" className="flex-1 gap-2" onClick={handleStartExploration}>
+                          <RefreshCw className="h-4 w-4" />
+                          重新生成
+                        </Button>
+                      </div>
                     </div>
                   ) : (
                     <p className="text-sm text-muted-foreground">副本数据加载中...</p>
