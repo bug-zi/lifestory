@@ -249,7 +249,9 @@ export default function HallOfFamePage() {
           <Trophy className="h-3.5 w-3.5" />
           <span>传奇人生殿堂</span>
         </div>
-        <h1 className="text-4xl md:text-5xl font-bold font-heading tracking-tight">名人堂</h1>
+        <div className="ink-title-frame">
+          <h1 className="text-4xl md:text-5xl font-bold font-calligraphy tracking-tight text-foreground text-glow">名人堂</h1>
+        </div>
         <p className="mt-3 text-lg text-muted-foreground max-w-lg">
           古今中外，各领域杰出人物。选一个传奇人生，开始你的副本之旅。
         </p>

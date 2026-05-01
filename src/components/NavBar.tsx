@@ -72,7 +72,7 @@ export function NavBar() {
     <header className="sticky top-0 z-50 w-full bg-background/90 backdrop-blur-md border-b border-border/60">
       <div className="mx-auto grid h-14 max-w-5xl grid-cols-[auto_1fr_auto] items-center gap-4 px-4 sm:px-6 lg:px-8">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2 font-bold text-lg tracking-tight" style={{ fontFamily: 'var(--font-heading), serif' }}>
+        <Link href="/" className="flex items-center gap-2 font-bold text-lg tracking-tight font-calligraphy" style={{ fontFamily: 'var(--font-calligraphy), var(--font-heading), cursive' }}>
           <img src="/images/lifestory.png" alt="人生副本" className="h-7 w-7 rounded-md" />
           <span>人生副本</span>
         </Link>

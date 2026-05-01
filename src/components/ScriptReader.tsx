@@ -189,7 +189,7 @@ export function ScriptReader({ script, onSave, isSaved, onReadLater, isReadLater
             <ArrowLeft className="h-4 w-4" />
             返回
           </Button>
-          <h1 className="text-3xl md:text-4xl font-bold font-heading">{script.title}</h1>
+          <h1 className="text-3xl md:text-4xl font-heading text-foreground">{script.title}</h1>
           {script.subtitle && (
             <p className="mt-2 text-lg text-muted-foreground">{script.subtitle}</p>
           )}
@@ -213,7 +213,7 @@ export function ScriptReader({ script, onSave, isSaved, onReadLater, isReadLater
         <Separator className="mb-8" />
 
         {/* Content */}
-        <div ref={contentRef} className="prose prose-neutral max-w-none">
+        <div ref={contentRef} className="prose prose-neutral max-w-none font-heading">
           {sections.map((section, i) => {
             if (showFull || i < 3) {
               const isLastVisible = (showFull && i === sections.length - 1) || (!showFull && i === 2 && sections.length > 3);
@@ -222,12 +222,12 @@ export function ScriptReader({ script, onSave, isSaved, onReadLater, isReadLater
                   {section.title && (
                     <div className="flex items-center gap-3 mb-5">
                       <span className="section-number">卷{cnNums[i + 1] || i + 1}</span>
-                      <h2 className="text-xl font-semibold font-heading">
+                      <h2 className="text-xl font-heading text-foreground/90">
                         {section.title}
                       </h2>
                     </div>
                   )}
-                  <div className="text-base leading-[1.8] tracking-wide whitespace-pre-wrap">
+                  <div className="whitespace-pre-wrap">
                     {section.paragraphs.map((p, j) => (
                       <p key={j} className={`mb-6 indent-8 ${j === 0 && i === 0 ? 'drop-cap' : ''}`}>
                         {p}
@@ -288,10 +288,10 @@ export function ScriptReader({ script, onSave, isSaved, onReadLater, isReadLater
             >
               <div className="absolute inset-0 bg-white/55 backdrop-blur-[2px]" />
               <div className="relative z-10 p-6 md:p-8">
-                <h3 className="text-lg font-semibold font-heading mb-3 text-gray-800/90 tracking-wider">
+                <h3 className="text-lg font-heading mb-3 text-gray-800/90 tracking-wider">
                   ✦ 最终总结
                 </h3>
-                <p className="text-base leading-[1.8] tracking-wide text-gray-700/90 italic">
+                <p className="text-gray-700/90 italic">
                   {summary}
                 </p>
               </div>
@@ -301,7 +301,7 @@ export function ScriptReader({ script, onSave, isSaved, onReadLater, isReadLater
           {/* Highlight Sentences */}
           {(showFull || sections.length <= 3) && highlights.length > 0 && (
             <div className="mt-4 mb-10">
-              <h3 className="text-lg font-semibold font-heading mb-4 text-accent-foreground tracking-wider">
+              <h3 className="text-lg font-heading mb-4 text-accent-foreground tracking-wider">
                 ✦ 高光句子
               </h3>
               <div className="space-y-4">
@@ -318,7 +318,7 @@ export function ScriptReader({ script, onSave, isSaved, onReadLater, isReadLater
                     <div className="absolute inset-0 bg-white/55 backdrop-blur-[2px]" />
                     <div className="relative z-10 flex items-start gap-3 px-5 py-4 md:px-6 md:py-5">
                       <span className="mt-0.5 text-gray-400 text-xl leading-none select-none font-serif">「</span>
-                      <p className="text-base leading-[1.8] tracking-wide flex-1 text-gray-700/90">
+                      <p className="flex-1 text-gray-700/90">
                         {sentence}
                       </p>
                       <span className="mt-0.5 text-gray-400 text-xl leading-none select-none font-serif">」</span>

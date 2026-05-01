@@ -42,7 +42,7 @@ export function PostcardCard({ quote, title, category, era }: Props) {
         className="relative w-[360px] h-[480px] rounded-lg overflow-hidden select-none"
         style={{
           background: 'linear-gradient(145deg, #1a1612 0%, #2a2420 40%, #1e1a16 100%)',
-          fontFamily: 'var(--font-heading)',
+          fontFamily: 'var(--font-calligraphy), var(--font-heading), cursive',
         }}
       >
         {/* Subtle ink wash texture */}

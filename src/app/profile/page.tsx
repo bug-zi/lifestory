@@ -7,7 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Loader2, User, Bot, Save, Eye, EyeOff, Zap, Crown, Camera } from 'lucide-react';
+import { Loader2, User, Bot, Save, Eye, EyeOff, Zap, Crown, Camera, Type } from 'lucide-react';
+import { FontSettingsPanel } from '@/components/FontSettingsPanel';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { useAuthContext } from '@/components/auth-provider';
@@ -282,6 +283,10 @@ export default function ProfilePage() {
             <Bot className="h-4 w-4" />
             AI 配置
           </TabsTrigger>
+          <TabsTrigger value="font" className="flex-1 gap-1.5">
+            <Type className="h-4 w-4" />
+            阅读设置
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="account" className="mt-6">
@@ -441,6 +446,9 @@ export default function ProfilePage() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+        <TabsContent value="font" className="mt-6">
+          <FontSettingsPanel />
         </TabsContent>
       </Tabs>
     </div>
