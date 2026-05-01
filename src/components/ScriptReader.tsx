@@ -36,20 +36,41 @@ export function ScriptReader({ script, onSave, isSaved, onReadLater, isReadLater
   const contentRef = useRef<HTMLDivElement>(null);
 
   // Detect text selection for "add to literary library"
+  // Uses selectionchange (works on both desktop & mobile touch selection)
   useEffect(() => {
-    function handleMouseUp() {
+    let hideTimer: ReturnType<typeof setTimeout>;
+
+    function handleSelectionChange() {
+      clearTimeout(hideTimer);
       const sel = window.getSelection();
       const text = sel?.toString().trim();
       if (text && text.length > 0 && contentRef.current?.contains(sel!.anchorNode)) {
         const range = sel!.getRangeAt(0);
         const rect = range.getBoundingClientRect();
-        setSelection({ text, x: rect.left + rect.width / 2, y: rect.top - 8 });
+        // Clamp position to keep button visible on small screens
+        const vw = window.innerWidth;
+        const btnW = 160; // approximate button width
+        const x = Math.max(btnW / 2 + 8, Math.min(rect.left + rect.width / 2, vw - btnW / 2 - 8));
+        const y = Math.max(60, rect.top - 8);
+        setSelection({ text, x, y });
       } else {
-        setSelection(null);
+        // Small delay to prevent flicker when clicking the add button
+        hideTimer = setTimeout(() => setSelection(null), 150);
       }
     }
-    document.addEventListener('mouseup', handleMouseUp);
-    return () => document.removeEventListener('mouseup', handleMouseUp);
+
+    document.addEventListener('selectionchange', handleSelectionChange);
+    // Also listen mouseup for immediate response on desktop
+    document.addEventListener('mouseup', handleSelectionChange);
+    // touchend for mobile — wait a tick for selection to finalize
+    document.addEventListener('touchend', () => setTimeout(handleSelectionChange, 300));
+
+    return () => {
+      document.removeEventListener('selectionchange', handleSelectionChange);
+      document.removeEventListener('mouseup', handleSelectionChange);
+      document.removeEventListener('touchend', handleSelectionChange);
+      clearTimeout(hideTimer);
+    };
   }, []);
 
   const handleAddToLiteraryLibrary = useCallback(async () => {
@@ -93,7 +114,7 @@ export function ScriptReader({ script, onSave, isSaved, onReadLater, isReadLater
     '十一','十二','十三','十四','十五','十六','十七','十八','十九','二十'];
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-6">
+    <div className="mx-auto max-w-2xl px-4 py-6 pb-24 md:pb-6">
       {/* Reading progress bar */}
       <div className="fixed top-14 left-0 right-0 z-40 h-0.5 bg-muted">
         <div
@@ -106,7 +127,7 @@ export function ScriptReader({ script, onSave, isSaved, onReadLater, isReadLater
       {selection && (
         <button
           onClick={handleAddToLiteraryLibrary}
-          className="fixed z-50 flex items-center gap-1.5 rounded-lg border bg-background px-3 py-1.5 text-sm shadow-lg transition-opacity hover:bg-accent"
+          className="fixed z-50 flex items-center gap-1.5 rounded-lg border bg-background px-3 py-1.5 text-sm shadow-lg transition-opacity hover:bg-accent active:bg-accent"
           style={{ left: selection.x, top: selection.y, transform: 'translate(-50%, -100%)' }}
         >
           <BookmarkPlus className="h-4 w-4" />
@@ -114,7 +135,7 @@ export function ScriptReader({ script, onSave, isSaved, onReadLater, isReadLater
         </button>
       )}
 
-      {/* Right sidebar — fixed on the right */}
+      {/* Right sidebar — desktop */}
       <aside className="hidden md:flex fixed right-6 top-1/2 -translate-y-1/2 z-30 flex-col gap-3 w-36">
         <Button
           variant={isSaved ? 'default' : 'outline'}
@@ -137,6 +158,30 @@ export function ScriptReader({ script, onSave, isSaved, onReadLater, isReadLater
           </Button>
         )}
       </aside>
+
+      {/* Mobile bottom action bar — save & read-later */}
+      <div className="flex md:hidden fixed bottom-0 left-0 right-0 z-30 bg-background/95 backdrop-blur border-t px-4 py-2 gap-2 safe-area-bottom">
+        <Button
+          variant={isSaved ? 'default' : 'outline'}
+          size="sm"
+          className="flex-1 gap-1.5"
+          onClick={onSave}
+        >
+          <Bookmark className="h-4 w-4" />
+          {isSaved ? '已收藏' : '收藏'}
+        </Button>
+        {onReadLater && (
+          <Button
+            variant={isReadLater ? 'default' : 'outline'}
+            size="sm"
+            className="flex-1 gap-1.5"
+            onClick={onReadLater}
+          >
+            <Clock className="h-4 w-4" />
+            {isReadLater ? '已待读' : '稍后读'}
+          </Button>
+        )}
+      </div>
 
       {/* Header */}
         <div className="mb-8">
