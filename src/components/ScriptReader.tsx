@@ -11,6 +11,10 @@ import {
   ArrowLeft,
   Clock,
   BookmarkPlus,
+  List,
+  X,
+  ScrollText,
+  Sparkles,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
@@ -33,10 +37,11 @@ export function ScriptReader({ script, onSave, isSaved, onReadLater, isReadLater
   const [showFull, setShowFull] = useState(false);
   const [readingProgress, setReadingProgress] = useState(0);
   const [selection, setSelection] = useState<{ text: string; x: number; y: number } | null>(null);
+  const [showOutline, setShowOutline] = useState(false);
+  const [activeSection, setActiveSection] = useState(0);
   const contentRef = useRef<HTMLDivElement>(null);
 
   // Detect text selection for "add to literary library"
-  // Uses selectionchange (works on both desktop & mobile touch selection)
   useEffect(() => {
     let hideTimer: ReturnType<typeof setTimeout>;
 
@@ -47,22 +52,18 @@ export function ScriptReader({ script, onSave, isSaved, onReadLater, isReadLater
       if (text && text.length > 0 && contentRef.current?.contains(sel!.anchorNode)) {
         const range = sel!.getRangeAt(0);
         const rect = range.getBoundingClientRect();
-        // Clamp position to keep button visible on small screens
         const vw = window.innerWidth;
-        const btnW = 160; // approximate button width
+        const btnW = 160;
         const x = Math.max(btnW / 2 + 8, Math.min(rect.left + rect.width / 2, vw - btnW / 2 - 8));
         const y = Math.max(60, rect.top - 8);
         setSelection({ text, x, y });
       } else {
-        // Small delay to prevent flicker when clicking the add button
         hideTimer = setTimeout(() => setSelection(null), 150);
       }
     }
 
     document.addEventListener('selectionchange', handleSelectionChange);
-    // Also listen mouseup for immediate response on desktop
     document.addEventListener('mouseup', handleSelectionChange);
-    // touchend for mobile — wait a tick for selection to finalize
     document.addEventListener('touchend', () => setTimeout(handleSelectionChange, 300));
 
     return () => {
@@ -113,6 +114,114 @@ export function ScriptReader({ script, onSave, isSaved, onReadLater, isReadLater
   const cnNums = ['〇','一','二','三','四','五','六','七','八','九','十',
     '十一','十二','十三','十四','十五','十六','十七','十八','十九','二十'];
 
+  // Track active section with IntersectionObserver
+  useEffect(() => {
+    const ids: string[] = [];
+    sections.forEach((_, i) => {
+      if (showFull || i < 3) ids.push(`section-${i}`);
+    });
+    if (showFull || sections.length <= 3) {
+      if (summary) ids.push('section-summary');
+      if (highlights.length > 0) ids.push('section-highlights');
+    }
+
+    const elements = ids.map(id => document.getElementById(id)).filter(Boolean) as HTMLElement[];
+    if (elements.length === 0) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            const id = entry.target.id;
+            if (id === 'section-summary') {
+              setActiveSection(sections.length);
+            } else if (id === 'section-highlights') {
+              setActiveSection(sections.length + 1);
+            } else {
+              setActiveSection(parseInt(id.replace('section-', '')));
+            }
+          }
+        }
+      },
+      { rootMargin: '-10% 0px -70% 0px' }
+    );
+
+    elements.forEach(el => observer.observe(el));
+    return () => observer.disconnect();
+  }, [sections.length, showFull, summary, highlights.length]);
+
+  // Outline click handler
+  const handleOutlineClick = useCallback((index: number) => {
+    if (index < sections.length) {
+      if (!showFull && index >= 3) {
+        setShowFull(true);
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            document.getElementById(`section-${index}`)?.scrollIntoView({ behavior: 'smooth' });
+          });
+        });
+      } else {
+        document.getElementById(`section-${index}`)?.scrollIntoView({ behavior: 'smooth' });
+      }
+    } else {
+      const id = index === sections.length ? 'section-summary' : 'section-highlights';
+      // Ensure full view for summary/highlights
+      if (!showFull && sections.length > 3) {
+        setShowFull(true);
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+          });
+        });
+      } else {
+        document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+    setShowOutline(false);
+  }, [showFull, sections.length]);
+
+  // Build outline items
+  const truncate = (str: string, max: number) =>
+    str.length > max ? str.slice(0, max) + '...' : str;
+
+  type OutlineType = 'section' | 'summary' | 'highlights';
+  const outlineItems: { label: string; shortLabel: string; type: OutlineType }[] = sections.map((s, i) => {
+    const raw = s.title
+      ? s.title.replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}\uFE0F\u200D]/gu, '').replace(/\s+/g, ' ').trim()
+      : `卷${cnNums[i + 1] || i + 1}`;
+    return { label: raw, shortLabel: truncate(raw, 15), type: 'section' as const };
+  });
+  if (summary) outlineItems.push({ label: '最终总结', shortLabel: '总结', type: 'summary' });
+  if (highlights.length > 0) outlineItems.push({ label: '高光句子', shortLabel: '金句', type: 'highlights' });
+
+  // Shared outline nav content
+  const outlineNav = (
+    <nav className="space-y-0.5">
+      {outlineItems.map((item, i) => (
+        <button
+          key={i}
+          onClick={() => handleOutlineClick(i)}
+          className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex items-center gap-2.5 ${
+            activeSection === i
+              ? 'bg-accent/10 text-accent-foreground font-medium'
+              : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+          }`}
+        >
+          {item.type === 'summary' ? (
+            <ScrollText className={`h-3.5 w-3.5 shrink-0 transition-colors ${activeSection === i ? 'text-accent' : 'text-muted-foreground/40'}`} />
+          ) : item.type === 'highlights' ? (
+            <Sparkles className={`h-3.5 w-3.5 shrink-0 transition-colors ${activeSection === i ? 'text-accent' : 'text-muted-foreground/40'}`} />
+          ) : (
+            <span className={`text-xs leading-none shrink-0 transition-colors ${activeSection === i ? 'text-accent' : 'text-muted-foreground/30'}`}>
+              {activeSection === i ? '◆' : '◇'}
+            </span>
+          )}
+          <span className="truncate">{item.shortLabel}</span>
+        </button>
+      ))}
+    </nav>
+  );
+
   return (
     <div className="mx-auto max-w-2xl px-4 py-6 pb-24 md:pb-6">
       {/* Reading progress bar */}
@@ -133,6 +242,50 @@ export function ScriptReader({ script, onSave, isSaved, onReadLater, isReadLater
           <BookmarkPlus className="h-4 w-4" />
           添加到文学库
         </button>
+      )}
+
+      {/* Outline sidebar — Desktop */}
+      <aside className="hidden lg:flex fixed left-4 top-1/2 -translate-y-1/2 z-30 w-52 flex-col">
+        <div className="rounded-xl border bg-background/80 backdrop-blur-sm p-3 shadow-sm max-h-[70vh] overflow-y-auto">
+          <div className="flex items-center gap-2 px-3 mb-2">
+            <List className="h-3.5 w-3.5 text-muted-foreground" />
+            <span className="text-xs font-medium text-muted-foreground tracking-wider">大纲导航</span>
+          </div>
+          {outlineNav}
+        </div>
+      </aside>
+
+      {/* Outline toggle button — Mobile/Tablet */}
+      <button
+        onClick={() => setShowOutline(true)}
+        className="lg:hidden fixed left-4 bottom-20 md:bottom-4 z-30 flex items-center justify-center w-10 h-10 rounded-full border bg-background/90 backdrop-blur-sm shadow-md hover:bg-accent/10 transition-colors"
+        aria-label="打开大纲导航"
+      >
+        <List className="h-5 w-5" />
+      </button>
+
+      {/* Outline drawer — Mobile/Tablet */}
+      {showOutline && (
+        <>
+          <div
+            className="lg:hidden fixed inset-0 z-40 bg-black/30 backdrop-blur-sm"
+            onClick={() => setShowOutline(false)}
+          />
+          <div className="lg:hidden fixed left-0 top-0 bottom-0 z-50 w-64 bg-background border-r shadow-xl p-5 pt-16 overflow-y-auto animate-in slide-in-from-left duration-200">
+            <button
+              onClick={() => setShowOutline(false)}
+              className="absolute top-4 right-4 p-1 rounded-md hover:bg-muted transition-colors"
+              aria-label="关闭大纲"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            <div className="flex items-center gap-2 mb-4">
+              <List className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-medium">大纲导航</span>
+            </div>
+            {outlineNav}
+          </div>
+        </>
       )}
 
       {/* Right sidebar — desktop */}
@@ -218,7 +371,7 @@ export function ScriptReader({ script, onSave, isSaved, onReadLater, isReadLater
             if (showFull || i < 3) {
               const isLastVisible = (showFull && i === sections.length - 1) || (!showFull && i === 2 && sections.length > 3);
               return (
-                <div key={i} className="mb-10">
+                <div key={i} id={`section-${i}`} className="mb-10 scroll-mt-16">
                   {section.title && (
                     <div className="flex items-center gap-3 mb-5">
                       <span className="section-number">卷{cnNums[i + 1] || i + 1}</span>
@@ -279,7 +432,8 @@ export function ScriptReader({ script, onSave, isSaved, onReadLater, isReadLater
           {/* Final Summary */}
           {(showFull || sections.length <= 3) && summary && (
             <div
-              className="mt-8 mb-10 rounded-2xl overflow-hidden shadow-lg relative"
+              id="section-summary"
+              className="mt-8 mb-10 rounded-2xl overflow-hidden shadow-lg relative scroll-mt-16"
               style={{
                 backgroundImage: 'url(/images/UI1.jpg)',
                 backgroundSize: 'cover',
@@ -300,7 +454,7 @@ export function ScriptReader({ script, onSave, isSaved, onReadLater, isReadLater
 
           {/* Highlight Sentences */}
           {(showFull || sections.length <= 3) && highlights.length > 0 && (
-            <div className="mt-4 mb-10">
+            <div id="section-highlights" className="mt-4 mb-10 scroll-mt-16">
               <h3 className="text-lg font-heading mb-4 text-accent-foreground tracking-wider">
                 ✦ 高光句子
               </h3>
@@ -349,14 +503,11 @@ export function ScriptReader({ script, onSave, isSaved, onReadLater, isReadLater
 }
 
 function parseContent(content: string) {
-  // Split by "---" separator to separate story from summary/highlights
   const parts = content.split(/\n---\n/);
-  // If no separator, use full content as both story and extra text
   const hasSeparator = parts.length > 1;
   const storyText = parts[0];
   const extraText = hasSeparator ? parts.slice(1).join('\n---\n') : content;
 
-  // Parse story sections — strip summary/highlights from story portion
   let storyOnly = storyText;
   if (!hasSeparator) {
     const cutIdx = storyText.search(/\n##\s*最终总结/);
@@ -364,7 +515,6 @@ function parseContent(content: string) {
   }
   const storySections = splitIntoSections(storyOnly);
 
-  // Parse summary and highlights from extra text
   let summary = '';
   const highlights: string[] = [];
 
@@ -400,7 +550,6 @@ function splitIntoSections(content: string) {
   };
 
   for (const line of lines) {
-    // Detect emoji headers like "🥀 童年：在暴力中觉醒" or "🎮 觉醒：从..."
     const emojiHeaderMatch = line.match(/^[\p{Emoji_Presentation}\p{Extended_Pictographic}]\s*.+$/u);
     if (emojiHeaderMatch && current.paragraphs.length > 0) {
       sections.push(current);
