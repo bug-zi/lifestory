@@ -21,6 +21,7 @@ const coreNavItems = [
   { href: '/scripts/daily', label: '每日副本', icon: BookOpen },
   { href: '/diy', label: 'DIY人生', icon: Sparkles },
   { href: '/hall-of-fame', label: '名人堂', icon: Trophy },
+  { href: '/floating-life', label: '浮生记', icon: ScrollText },
   { href: '/library', label: '人生库', icon: Library },
 ];
 

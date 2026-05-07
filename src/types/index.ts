@@ -121,3 +121,21 @@ export interface Order {
 export type ScriptMood = '热血' | '治愈' | '暗黑' | '荒诞' | '温馨' | '震撼' | '讽刺';
 export type ScriptCategory = '科技' | '艺术' | '体育' | '政治' | '商业' | '冒险' | '犯罪' | '日常';
 export type ScriptEra = '古代' | '近代' | '当代' | '未来';
+
+export interface FloatingLifeStory {
+  id: string;
+  title: string;
+  subtitle: string | null;
+  content: string;
+  source: '现代言情' | '文学经典' | '民间传说' | 'AI原创';
+  era: string | null;
+  mood: string | null;
+  tags: string[];
+  word_count: number | null;
+  cover_image: string | null;
+  author: string | null;
+  is_featured: boolean;
+  sort_order: number;
+  view_count: number;
+  created_at: string;
+}

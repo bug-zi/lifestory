@@ -357,9 +357,6 @@ export function ScriptReader({ script, onSave, isSaved, onReadLater, isReadLater
                 {script.word_count} 字
               </span>
             )}
-            {script.mood && (
-              <Badge variant="outline">{script.mood}</Badge>
-            )}
           </div>
         </div>
 
