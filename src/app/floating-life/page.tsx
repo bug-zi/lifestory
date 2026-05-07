@@ -6,8 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
   Search, ScrollText, Heart, BookOpen, Sparkles, Brain, Clock,
-  Loader2, CheckCircle2, Feather,
+  Loader2, CheckCircle2, Feather, Wand2,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { useAuthContext } from '@/components/auth-provider';
 import type { FloatingLifeStory } from '@/types';
 
@@ -39,6 +40,7 @@ export default function FloatingLifePage() {
   const [filteredStories, setFilteredStories] = useState<FloatingLifeStory[]>([]);
   const [readings, setReadings] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
   const [source, setSource] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -56,6 +58,25 @@ export default function FloatingLifePage() {
       console.error('加载失败');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleGenerate() {
+    if (!authUser) {
+      toast.error('请先登录');
+      return;
+    }
+    setGenerating(true);
+    try {
+      const res = await fetch('/api/floating-life/generate', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || '生成失败');
+      toast.success(`《${data.story?.title || '无题'}》已添加到浮生记`);
+      loadData();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : '生成失败，请稍后再试');
+    } finally {
+      setGenerating(false);
     }
   }
 
@@ -120,14 +141,29 @@ export default function FloatingLifePage() {
         </div>
       </div>
 
-      {/* Count + Stats */}
+      {/* Count + Stats + Generate */}
       <div className="flex items-center justify-between mb-6">
         <p className="text-sm text-muted-foreground">显示 {filteredStories.length} 篇故事</p>
-        {authUser && (
-          <p className="text-sm text-muted-foreground">
-            已读 {readings.size}/{stories.length}
-          </p>
-        )}
+        <div className="flex items-center gap-3">
+          {authUser && (
+            <p className="text-sm text-muted-foreground">
+              已读 {readings.size}/{stories.length}
+            </p>
+          )}
+          <Button
+            size="sm"
+            onClick={handleGenerate}
+            disabled={generating}
+            className="gap-1.5 rounded-full bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-600 hover:to-purple-600 text-white shadow-sm"
+          >
+            {generating ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Wand2 className="h-3.5 w-3.5" />
+            )}
+            {generating ? '生成中...' : '新增故事'}
+          </Button>
+        </div>
       </div>
 
       {/* Loading */}
