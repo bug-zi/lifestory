@@ -1,6 +1,7 @@
 -- ============================================================================
--- Migration: 010_floating_life_ai_1
--- Description: AI原创情感故事 1-5 (CLEARED)
+-- Migration: 012_truncate_floating_life_stories
+-- Description: Clear all existing floating life stories (quality reset)
 -- Created: 2026-05-07
--- Note: All seed stories have been removed. Re-populate with high-quality content.
 -- ============================================================================
+
+TRUNCATE TABLE public.floating_life_stories CASCADE;
