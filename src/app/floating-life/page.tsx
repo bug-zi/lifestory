@@ -106,7 +106,7 @@ export default function FloatingLifePage() {
     <div className="mx-auto max-w-5xl px-4 py-8">
       {/* Hero */}
       <section className="flex flex-col items-center text-center py-12 md:py-16 relative">
-        <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_center,rgba(139,92,246,0.08),transparent)]" />
+        <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_center,rgba(80,60,40,0.06),transparent)]" />
         <div className="inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-sm text-accent mb-4">
           <Feather className="h-3.5 w-3.5" />
           <span>意难平的情感故事</span>
@@ -154,7 +154,7 @@ export default function FloatingLifePage() {
             size="sm"
             onClick={handleGenerate}
             disabled={generating}
-            className="gap-1.5 rounded-full bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-600 hover:to-purple-600 text-white shadow-sm"
+            className="gap-1.5 rounded-full border border-ink/20 bg-ink/5 hover:bg-ink/10 text-ink dark:text-ink-light shadow-sm"
           >
             {generating ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
