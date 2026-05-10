@@ -122,6 +122,26 @@ export type ScriptMood = '热血' | '治愈' | '暗黑' | '荒诞' | '温馨' | 
 export type ScriptCategory = '科技' | '艺术' | '体育' | '政治' | '商业' | '冒险' | '犯罪' | '日常';
 export type ScriptEra = '古代' | '近代' | '当代' | '未来';
 
+export interface DailyFortune {
+  id: string;
+  user_id: string;
+  fortune_date: string;
+  fortune_text: string;
+  source_title: string | null;
+  source_id: string | null;
+  shared: boolean;
+  created_at: string;
+}
+
+export interface InterviewMessage {
+  id: string;
+  user_id: string;
+  script_id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  created_at: string;
+}
+
 export interface FloatingLifeStory {
   id: string;
   title: string;
@@ -135,6 +155,8 @@ export interface FloatingLifeStory {
   cover_image: string | null;
   author: string | null;
   is_featured: boolean;
+  is_archived: boolean;
+  archived_at: string | null;
   sort_order: number;
   view_count: number;
   created_at: string;

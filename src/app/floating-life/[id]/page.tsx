@@ -1,10 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { ScriptReader } from '@/components/ScriptReader';
 import { useAuthContext } from '@/components/auth-provider';
+import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { Archive, ArchiveRestore } from 'lucide-react';
 import type { Script, FloatingLifeStory } from '@/types';
 
 function storyToScript(story: FloatingLifeStory): Script {
@@ -29,6 +31,7 @@ function storyToScript(story: FloatingLifeStory): Script {
 
 export default function FloatingLifeReadingPage() {
   const { id } = useParams();
+  const router = useRouter();
   const { user: authUser } = useAuthContext();
   const [story, setStory] = useState<FloatingLifeStory | null>(null);
   const [loading, setLoading] = useState(true);
@@ -55,6 +58,23 @@ export default function FloatingLifeReadingPage() {
     }
   }
 
+  async function handleArchive() {
+    if (!story) return;
+    try {
+      const res = await fetch(`/api/floating-life/${story.id}/archive`, { method: 'PATCH' });
+      if (!res.ok) throw new Error();
+      const { is_archived } = await res.json();
+      toast.success(is_archived ? '已归档' : '已取消归档');
+      if (is_archived) {
+        router.push('/floating-life');
+      } else {
+        setStory({ ...story, is_archived: false, archived_at: null });
+      }
+    } catch {
+      toast.error('操作失败');
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -72,10 +92,26 @@ export default function FloatingLifeReadingPage() {
   }
 
   return (
-    <ScriptReader
-      script={storyToScript(story)}
-      onComplete={handleComplete}
-      isCompleted={isCompleted}
-    />
+    <div className="relative">
+      <div className="fixed top-20 right-4 z-50">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleArchive}
+          className="gap-1.5 shadow-sm"
+        >
+          {story.is_archived ? (
+            <><ArchiveRestore className="h-3.5 w-3.5" />取消归档</>
+          ) : (
+            <><Archive className="h-3.5 w-3.5" />归档</>
+          )}
+        </Button>
+      </div>
+      <ScriptReader
+        script={storyToScript(story)}
+        onComplete={handleComplete}
+        isCompleted={isCompleted}
+      />
+    </div>
   );
 }

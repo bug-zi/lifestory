@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { ScriptReader } from '@/components/ScriptReader';
+import { InterviewChat } from '@/components/InterviewChat';
 import { useAuthContext } from '@/components/auth-provider';
 import { toast } from 'sonner';
 import type { Script } from '@/types';
@@ -14,6 +15,7 @@ export default function ScriptDetailPage() {
   const [loading, setLoading] = useState(true);
   const [isSaved, setIsSaved] = useState(false);
   const [isReadLater, setIsReadLater] = useState(false);
+  const [showInterview, setShowInterview] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -102,5 +104,10 @@ export default function ScriptDetailPage() {
     );
   }
 
-  return <ScriptReader script={script} onSave={handleSave} isSaved={isSaved} onReadLater={handleReadLater} isReadLater={isReadLater} />;
+  return (
+    <>
+      <ScriptReader script={script} onSave={handleSave} isSaved={isSaved} onReadLater={handleReadLater} isReadLater={isReadLater} onInterview={() => setShowInterview(true)} />
+      {showInterview && <InterviewChat script={script} onClose={() => setShowInterview(false)} />}
+    </>
+  );
 }

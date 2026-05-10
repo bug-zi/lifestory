@@ -15,6 +15,7 @@ import {
   X,
   ScrollText,
   Sparkles,
+  MessageCircle,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
@@ -30,9 +31,10 @@ interface ScriptReaderProps {
   isReadLater?: boolean;
   onComplete?: () => void;
   isCompleted?: boolean;
+  onInterview?: () => void;
 }
 
-export function ScriptReader({ script, onSave, isSaved, onReadLater, isReadLater, onComplete, isCompleted }: ScriptReaderProps) {
+export function ScriptReader({ script, onSave, isSaved, onReadLater, isReadLater, onComplete, isCompleted, onInterview }: ScriptReaderProps) {
   const router = useRouter();
   const [showFull, setShowFull] = useState(false);
   const [readingProgress, setReadingProgress] = useState(0);
@@ -492,6 +494,14 @@ export function ScriptReader({ script, onSave, isSaved, onReadLater, isReadLater
                 <CheckCircle2 className="h-5 w-5" />
                 {isCompleted ? '已完成阅读' : '完成阅读'}
               </Button>
+              {onInterview && (
+                <div className="mt-3">
+                  <Button variant="ghost" size="sm" onClick={onInterview} className="gap-1.5 text-accent">
+                    <MessageCircle className="h-4 w-4" />
+                    与主角对话
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </div>

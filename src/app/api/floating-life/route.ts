@@ -8,6 +8,7 @@ export async function GET(request: NextRequest) {
   const source = searchParams.get('source');
   const era = searchParams.get('era');
   const search = searchParams.get('search');
+  const archived = searchParams.get('archived');
 
   let query = supabase
     .from('floating_life_stories')
@@ -24,6 +25,12 @@ export async function GET(request: NextRequest) {
 
   if (search) {
     query = query.ilike('title', `%${search}%`);
+  }
+
+  if (archived === 'true') {
+    query = query.eq('is_archived', true);
+  } else {
+    query = query.eq('is_archived', false);
   }
 
   const { data, error } = await query;

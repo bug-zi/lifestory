@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { BookOpen, Sparkles, Library, Trophy, ArrowRight, Feather } from 'lucide-react';
+import { FortuneCard } from '@/components/FortuneCard';
 
 export default function HomePage() {
   const heroRef = useRef<HTMLElement>(null);
@@ -180,6 +181,14 @@ export default function HomePage() {
         </div>
 
         {/* Bottom CTA */}
+        <div className="ink-divider" />
+
+        {/* 今日命运签 */}
+        <div className="py-10">
+          <h3 className="text-center text-sm text-muted-foreground mb-4 font-heading">今日命运签</h3>
+          <FortuneCard />
+        </div>
+
         <div className="ink-divider" />
         <div className="text-center py-10">
           <p className="text-muted-foreground mb-1 text-sm">

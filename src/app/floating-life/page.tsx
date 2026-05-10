@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
   Search, ScrollText, Heart, BookOpen, Sparkles, Brain, Clock,
-  Loader2, CheckCircle2, Feather, Wand2,
+  Loader2, CheckCircle2, Feather, Wand2, Archive, ArchiveRestore, X,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuthContext } from '@/components/auth-provider';
@@ -43,14 +43,15 @@ export default function FloatingLifePage() {
   const [generating, setGenerating] = useState(false);
   const [source, setSource] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [showArchived, setShowArchived] = useState(false);
 
-  useEffect(() => { if (!authLoading) loadData(); }, [authLoading]);
+  useEffect(() => { if (!authLoading) loadData(); }, [authLoading, showArchived]);
   useEffect(() => { filterStories(); }, [stories, source, searchQuery]);
 
   async function loadData() {
     setLoading(true);
     try {
-      const res = await fetch('/api/floating-life');
+      const res = await fetch(`/api/floating-life${showArchived ? '?archived=true' : ''}`);
       const data = await res.json();
       setStories(data.items || []);
       setReadings(new Set(data.readings || []));
@@ -92,6 +93,20 @@ export default function FloatingLifePage() {
       );
     }
     setFilteredStories(filtered);
+  }
+
+  async function handleArchive(id: string, e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      const res = await fetch(`/api/floating-life/${id}/archive`, { method: 'PATCH' });
+      if (!res.ok) throw new Error();
+      const { is_archived } = await res.json();
+      toast.success(is_archived ? '已归档' : '已取消归档');
+      loadData();
+    } catch {
+      toast.error('操作失败');
+    }
   }
 
   function stripContent(text: string): string {
@@ -138,6 +153,17 @@ export default function FloatingLifePage() {
               {s.label}
             </Button>
           ))}
+          <div className="ml-auto">
+            <Button
+              variant={showArchived ? 'default' : 'ghost'}
+              size="sm"
+              className="h-7 text-xs rounded-full gap-1"
+              onClick={() => setShowArchived(!showArchived)}
+            >
+              {showArchived ? <ArchiveRestore className="h-3.5 w-3.5" /> : <Archive className="h-3.5 w-3.5" />}
+              {showArchived ? '返回故事' : '归档'}
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -182,14 +208,25 @@ export default function FloatingLifePage() {
                 href={`/floating-life/${story.id}`}
                 className={`group rounded-xl border bg-gradient-to-br ${sourceGradients[story.source] || 'from-muted/50 to-transparent'} p-5 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 relative ${isRead ? 'ring-1 ring-violet-200 dark:ring-violet-800' : ''}`}
               >
-                {isRead && (
-                  <div className="absolute top-3 right-3">
+                <div className="absolute top-3 right-3 flex items-center gap-1">
+                  {isRead && (
                     <Badge className="bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300 text-[10px] border-0 gap-1 px-1.5 py-0">
                       <CheckCircle2 className="h-3 w-3" />
                       已读
                     </Badge>
-                  </div>
-                )}
+                  )}
+                  <button
+                    onClick={(e) => handleArchive(story.id, e)}
+                    className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-muted"
+                    title={showArchived ? '取消归档' : '归档'}
+                  >
+                    {showArchived ? (
+                      <ArchiveRestore className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
+                    ) : (
+                      <X className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
+                    )}
+                  </button>
+                </div>
                 <div className="flex items-start gap-3 mb-3">
                   <span className="text-accent">{sourceIcons[story.source]}</span>
                   <div className="min-w-0">
