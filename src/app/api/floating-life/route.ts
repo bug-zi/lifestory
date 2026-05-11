@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
 
   if (archived === 'true') {
     query = query.eq('is_archived', true);
-  } else {
+  } else if (archived === 'false') {
     query = query.eq('is_archived', false);
   }
 
