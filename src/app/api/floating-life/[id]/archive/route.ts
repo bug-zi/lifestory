@@ -20,7 +20,7 @@ export async function PATCH(
 
   const newArchived = !story?.is_archived;
 
-  const { error } = await supabase
+  const { error, count } = await supabase
     .from('floating_life_stories')
     .update({
       is_archived: newArchived,

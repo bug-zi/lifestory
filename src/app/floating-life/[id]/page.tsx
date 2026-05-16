@@ -62,16 +62,17 @@ export default function FloatingLifeReadingPage() {
     if (!story) return;
     try {
       const res = await fetch(`/api/floating-life/${story.id}/archive`, { method: 'PATCH' });
-      if (!res.ok) throw new Error();
-      const { is_archived } = await res.json();
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || '操作失败');
+      const { is_archived } = data;
       toast.success(is_archived ? '已归档' : '已取消归档');
       if (is_archived) {
         router.push('/floating-life');
       } else {
         setStory({ ...story, is_archived: false, archived_at: null });
       }
-    } catch {
-      toast.error('操作失败');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : '操作失败');
     }
   }
 

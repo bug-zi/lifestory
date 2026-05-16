@@ -100,12 +100,13 @@ export default function FloatingLifePage() {
     e.stopPropagation();
     try {
       const res = await fetch(`/api/floating-life/${id}/archive`, { method: 'PATCH' });
-      if (!res.ok) throw new Error();
-      const { is_archived } = await res.json();
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || '操作失败');
+      const { is_archived } = data;
       toast.success(is_archived ? '已归档' : '已取消归档');
       loadData();
-    } catch {
-      toast.error('操作失败');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : '操作失败');
     }
   }
 

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase-server';
+import { createAdminClient } from '@/lib/supabase-admin';
 
 export async function GET(
   _request: NextRequest,
@@ -18,11 +19,12 @@ export async function GET(
     return NextResponse.json({ error: '故事不存在' }, { status: 404 });
   }
 
-  // Increment view count
-  await supabase
+  // Increment view count using admin client (fire-and-forget)
+  createAdminClient()
     .from('floating_life_stories')
     .update({ view_count: story.view_count + 1 })
-    .eq('id', id);
+    .eq('id', id)
+    .then(() => {});
 
   return NextResponse.json({ story });
 }
