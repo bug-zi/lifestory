@@ -510,17 +510,20 @@ export function ScriptReader({ script, onSave, isSaved, onReadLater, isReadLater
 }
 
 function parseContent(content: string) {
-  const parts = content.split(/\n---\n/);
-  const hasSeparator = parts.length > 1;
-  const storyText = parts[0];
-  const extraText = hasSeparator ? parts.slice(1).join('\n---\n') : content;
+  // Use ## 最终总结 as the boundary between story and extras (not ---)
+  const summaryIdx = content.search(/\n##\s*最终总结/);
+  let storyText: string;
+  let extraText = '';
 
-  let storyOnly = storyText;
-  if (!hasSeparator) {
-    const cutIdx = storyText.search(/\n##\s*最终总结/);
-    if (cutIdx > 0) storyOnly = storyText.slice(0, cutIdx);
+  if (summaryIdx > 0) {
+    storyText = content.slice(0, summaryIdx);
+    extraText = content.slice(summaryIdx);
+  } else {
+    // No 最终总结 — entire content is story
+    storyText = content;
   }
-  const storySections = splitIntoSections(storyOnly);
+
+  const storySections = splitIntoSections(storyText);
 
   let summary = '';
   const highlights: string[] = [];
@@ -549,7 +552,10 @@ function parseContent(content: string) {
 }
 
 function splitIntoSections(content: string) {
-  const lines = content.split('\n').filter((l) => l.trim());
+  // Remove standalone --- dividers between sections
+  const cleaned = content.replace(/^\s*---\s*$/gm, '');
+
+  const lines = cleaned.split('\n').filter((l) => l.trim());
   const sections: { title: string | null; paragraphs: string[] }[] = [];
   let current: { title: string | null; paragraphs: string[] } = {
     title: null,
@@ -557,12 +563,19 @@ function splitIntoSections(content: string) {
   };
 
   for (const line of lines) {
-    const emojiHeaderMatch = line.match(/^[\p{Emoji_Presentation}\p{Extended_Pictographic}]\s*.+$/u);
+    // Strip #+ prefix and ** bold markers for matching
+    const matchLine = line.trim().replace(/^#+\s+/, '').replace(/^\*\*/, '').replace(/\*\*$/, '').trim();
+    // Match section headers with emoji — handles:
+    // 🌧 标题 | 一、🌧 标题 | 第一章 🌑 标题 | 终章 🌄 标题 | 第一乐章：🎸 标题
+    const emojiHeaderMatch = matchLine.match(
+      /^(?:第[一二三四五六七八九十百零]+[章节幕卷篇部回]?[：:]*\s*|[一二三四五六七八九十百零]+[、.．：:]*\s*|终[章节幕卷]?\s*)?[\p{Emoji_Presentation}\p{Extended_Pictographic}]/u
+    );
+
     if (emojiHeaderMatch && current.paragraphs.length > 0) {
       sections.push(current);
-      current = { title: line.trim(), paragraphs: [] };
+      current = { title: matchLine, paragraphs: [] };
     } else if (emojiHeaderMatch && current.paragraphs.length === 0) {
-      current.title = line.trim();
+      current.title = matchLine;
     } else {
       current.paragraphs.push(line.trim());
     }
